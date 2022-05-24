@@ -472,8 +472,10 @@ func (b TestBuilder) findTestBundle(opts findTestBundleOpts) (testBundle, error)
 
 	// Without better solution the step determines the build target based on the xctestrun file name
 	// ios-simple-objc_iphonesimulator12.0-x86_64.xctestrun
+	// BullsEye_FullTests_iphonesimulator15.4-arm64-x86_64.xctestrun
+	// file name layout: <scheme>_<test_plan>_<simulator>
 	var builtForDestination string
-	if strings.Contains(xctestrunPth, fmt.Sprintf("%s_iphonesimulator", opts.Scheme)) {
+	if strings.Contains(xctestrunPth, "_iphonesimulator") {
 		builtForDestination = "iphonesimulator"
 	} else {
 		builtForDestination = "iphoneos"
