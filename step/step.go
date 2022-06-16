@@ -498,34 +498,33 @@ func (b XcodebuildBuilder) exportXcodebuildLog(outputDir, xcodebuildLog string) 
 	return nil
 }
 
-func (b XcodebuildBuilder) zipTestBundle(outputDir, symroot string) (string, error) {
+func (b XcodebuildBuilder) zipTestBundle(outputDir, symroot, defaultXctestrunPth string) (string, error) {
 	testBundleZipPth := filepath.Join(outputDir, "testbundle.zip")
 
-	//entries, err := b.dirReader.ReadDir(symroot)
-	//if err != nil {
-	//	return fmt.Errorf("failed to list SYMROOT entries: %w", err)
-	//}
-	//
-	//var builtTestsDir string
-	//for _, entry := range entries {
-	//	if entry.IsDir() {
-	//		if builtTestsDir != "" {
-	//			return fmt.Errorf("multiple built test dir found in build output dir")
-	//		}
-	//		builtTestsDir = entry.Name()
-	//	}
-	//}
+	entries, err := b.dirReader.ReadDir(symroot)
+	if err != nil {
+		return "", fmt.Errorf("failed to list SYMROOT entries: %w", err)
+	}
 
-	args := []string{"-r", testBundleZipPth, symroot}
-	//args = append(args, builtTestsDir)
-	//for _, xctestrunPth := range xctestrunPths {
-	//	args = append(args, filepath.Base(xctestrunPth))
-	//}
+	var builtTestsDir string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if builtTestsDir != "" {
+				return "", fmt.Errorf("multiple built test dir found in build output dir")
+			}
+			builtTestsDir = entry.Name()
+		}
+	}
 
-	factory := v2command.NewFactory(env.NewRepository())
-	zipCmd := factory.Create("zip", args, &v2command.Opts{
+	log.Printf("built tests dir: %s", builtTestsDir)
+	log.Printf("xctestrun: %s", defaultXctestrunPth)
+
+	args := []string{"-r", testBundleZipPth, filepath.Base(builtTestsDir), filepath.Base(defaultXctestrunPth)}
+	zipCmd := v2command.NewFactory(env.NewRepository()).Create("zip", args, &v2command.Opts{
 		Dir: symroot,
 	})
+	fmt.Println(zipCmd.PrintableCommandArgs())
+
 	if out, err := zipCmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 		var exerr *exec.ExitError
 		if errors.As(err, &exerr) {
@@ -545,12 +544,12 @@ func (b XcodebuildBuilder) exportTestBundle(outputDir, symroot string, xctestrun
 	b.logger.Donef("The test bundle directory is available in %s env: %s", testBundlePathEnvKey, symroot)
 
 	// BITRISE_TEST_BUNDLE_ZIP_PATH
-	testBundleZipPth, err := b.zipTestBundle(outputDir, symroot)
+	testBundleZipPth, err := b.zipTestBundle(outputDir, symroot, defaultXctestrunPth)
 	if err != nil {
 		return err
 	}
-	if err := output.ExportOutputFile(testBundleZipPth, testBundleZipPth, testBundleZipPathEnvKey); err != nil {
-		return err
+	if err := tools.ExportEnvironmentWithEnvman(testBundleZipPathEnvKey, testBundleZipPth); err != nil {
+		return fmt.Errorf("failed to export %s: %w", testBundleZipPathEnvKey, err)
 	}
 	b.logger.Donef("The zipped test bundle is available in %s env: %s", testBundleZipPathEnvKey, testBundleZipPth)
 
