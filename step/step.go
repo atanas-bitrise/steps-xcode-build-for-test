@@ -281,7 +281,7 @@ func (b XcodebuildBuilder) Run(cfg Config) (RunOut, error) {
 
 	xcodeBuildCmd := xcodebuild.NewCommandBuilder(cfg.ProjectPath, "build-for-testing")
 	xcodeBuildCmd.SetScheme(cfg.Scheme)
-	xcodeBuildCmd.SetConfiguration(cfg.Configuration)
+	// xcodeBuildCmd.SetConfiguration(cfg.Configuration)
 	xcodeBuildCmd.SetDestination(cfg.Destination)
 	xcodeBuildCmd.SetTestPlan(cfg.TestPlan)
 
