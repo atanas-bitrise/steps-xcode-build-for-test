@@ -130,7 +130,7 @@ func (c *CommandBuilder) SetTestPlan(testPlan string) *CommandBuilder {
 }
 
 func (c *CommandBuilder) cmdSlice() []string {
-	slice := []string{toolName}
+	slice := []string{"arch", "-x86_64", toolName}
 	slice = append(slice, c.actions...)
 
 	if c.projectPath != "" {
